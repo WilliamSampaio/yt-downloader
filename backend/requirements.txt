@@ -1,5 +1,5 @@
-fastapi
-uvicorn[standard]
-yt-dlp
-imageio-ffmpeg
-ytmusicapi
+fastapi>=0.115
+uvicorn[standard]>=0.30
+yt-dlp>=2026.8.19
+imageio-ffmpeg>=0.6
+ytmusicapi>=1.12

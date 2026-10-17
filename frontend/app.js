@@ -74,6 +74,19 @@ tabs.forEach((tab) => {
   tab.addEventListener("click", () => selectType(tab.dataset.type));
 });
 
+// Tenta cada imagem em ordem; se nenhuma carregar, esconde em vez de mostrar o ícone quebrado.
+function showThumbnail(candidates) {
+  const queue = candidates.filter(Boolean);
+  const next = () => {
+    const src = queue.shift();
+    thumbEl.classList.toggle("hidden", !src);
+    if (src) thumbEl.src = src;
+    else thumbEl.removeAttribute("src");
+  };
+  thumbEl.onerror = next;
+  next();
+}
+
 fetchBtn.addEventListener("click", fetchInfo);
 urlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchInfo();
@@ -103,7 +116,11 @@ async function fetchInfo() {
     const video = data.video;
     const playlist = data.playlist;
 
-    thumbEl.src = (video && video.thumbnail) || (playlist && playlist.thumbnail) || "";
+    showThumbnail([
+      video && video.thumbnail,
+      playlist && playlist.thumbnail,
+      playlist && playlist.fallback_thumbnail,
+    ]);
 
     if (video) {
       titleEl.textContent = video.title || "Sem título";

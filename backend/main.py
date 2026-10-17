@@ -271,6 +271,10 @@ def get_info(url: str = Query(..., min_length=1)):
         playlist_data = {
             "title": playlist["title"],
             "thumbnail": playlist["thumbnail"],
+            # Capas de playlist vêm de yt3.googleusercontent.com, que às vezes
+            # recusa a imagem (429); a miniatura do 1º vídeo serve de reserva.
+            "fallback_thumbnail": f"https://i.ytimg.com/vi/{playlist['entries'][0]['id']}/hqdefault.jpg"
+            if playlist["entries"][0].get("id") else None,
             "count": len(playlist["entries"]),
             "is_music": is_music_url(url),
         }
