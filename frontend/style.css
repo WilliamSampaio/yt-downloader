@@ -145,11 +145,12 @@ button:disabled { background: #4b5563; cursor: not-allowed; }
 
 .download-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .download-actions button {
-  flex: 1;
+  flex: 1 1 180px;
 }
 
 .playlist-badge {
