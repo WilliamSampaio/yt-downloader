@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Downloader</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>YouTube Downloader</h1>
+    <p class="subtitle">Cole o link de um vídeo ou de uma playlist, escolha o formato e a qualidade.</p>
+
+    <div class="url-row">
+      <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+      <button id="fetchBtn">Buscar</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="result" class="result hidden">
+      <div class="video-info">
+        <img id="thumb" src="" alt="thumbnail">
+        <div class="video-meta">
+          <h2 id="title"></h2>
+          <span id="uploader"></span>
+          <div id="playlistBadge" class="playlist-badge hidden"></div>
+          <div id="liveBadge" class="live-badge hidden"></div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-type="video">Vídeo (MP4)</button>
+        <button class="tab" data-type="audio">Áudio (MP3)</button>
+      </div>
+
+      <div class="quality-row">
+        <label for="quality">Qualidade:</label>
+        <select id="quality"></select>
+      </div>
+
+      <div class="download-actions">
+        <button id="downloadVideoBtn" class="hidden">Baixar este vídeo</button>
+        <button id="downloadPlaylistBtn" class="hidden">Baixar Playlist</button>
+      </div>
+
+      <div id="progress" class="progress hidden">Baixando e convertendo... isso pode levar alguns instantes.</div>
+
+      <div id="playlistProgress" class="playlist-progress hidden">
+        <div class="playlist-progress-header">
+          <span id="playlistProgressLabel">Baixando 0 de 0</span>
+        </div>
+        <ul id="playlistItems" class="playlist-items"></ul>
+        <button id="downloadZipBtn" class="download-zip-btn hidden">Baixar ZIP da playlist</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
