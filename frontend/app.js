@@ -10,6 +10,7 @@ const liveBadgeEl = document.getElementById("liveBadge");
 const qualityEl = document.getElementById("quality");
 const downloadVideoBtn = document.getElementById("downloadVideoBtn");
 const downloadPlaylistBtn = document.getElementById("downloadPlaylistBtn");
+const downloadTracklistBtn = document.getElementById("downloadTracklistBtn");
 const downloadZipBtn = document.getElementById("downloadZipBtn");
 const progressEl = document.getElementById("progress");
 const playlistProgressEl = document.getElementById("playlistProgress");
@@ -50,21 +51,27 @@ function updateActionButtons() {
 
   downloadVideoBtn.classList.toggle("hidden", !hasVideo);
   downloadPlaylistBtn.classList.toggle("hidden", !hasPlaylist);
+  downloadTracklistBtn.classList.toggle("hidden", !hasPlaylist);
   downloadVideoBtn.disabled = !!liveMessage;
 
   downloadVideoBtn.textContent = hasVideo && hasPlaylist ? "Baixar este vídeo" : "Baixar";
   downloadPlaylistBtn.textContent = hasPlaylist
-    ? `Baixar Playlist (${currentInfo.playlist.count} vídeos)`
+    ? `Baixar Playlist (${currentInfo.playlist.count} ${playlistUnit(currentInfo.playlist)})`
     : "Baixar Playlist";
 }
 
+function playlistUnit(playlist) {
+  return playlist.is_music ? "músicas" : "vídeos";
+}
+
+function selectType(type) {
+  tabs.forEach((t) => t.classList.toggle("active", t.dataset.type === type));
+  currentType = type;
+  if (currentInfo) populateQualities();
+}
+
 tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    currentType = tab.dataset.type;
-    if (currentInfo) populateQualities();
-  });
+  tab.addEventListener("click", () => selectType(tab.dataset.type));
 });
 
 fetchBtn.addEventListener("click", fetchInfo);
@@ -114,13 +121,15 @@ async function fetchInfo() {
     }
 
     if (playlist) {
-      playlistBadgeEl.textContent = `Playlist: ${playlist.title} · ${playlist.count} vídeos`;
+      playlistBadgeEl.textContent = `Playlist: ${playlist.title} · ${playlist.count} ${playlistUnit(playlist)}`;
       playlistBadgeEl.classList.remove("hidden");
     } else {
       playlistBadgeEl.classList.add("hidden");
     }
 
-    populateQualities();
+    // Playlists do YouTube Music quase sempre são para ouvir: já abre em MP3.
+    if (playlist && playlist.is_music && !video) currentType = "audio";
+    selectType(currentType);
     updateActionButtons();
 
     resultEl.classList.remove("hidden");
@@ -134,10 +143,51 @@ async function fetchInfo() {
 
 downloadVideoBtn.addEventListener("click", downloadSingle);
 downloadPlaylistBtn.addEventListener("click", startPlaylistDownload);
+downloadTracklistBtn.addEventListener("click", downloadTracklist);
 downloadZipBtn.addEventListener("click", () => {
   const jobId = downloadZipBtn.dataset.jobId;
   if (jobId) window.location.href = `/api/playlist/result/${jobId}`;
 });
+
+async function saveResponseAsFile(res, fallbackName) {
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+  let filename = fallbackName;
+  if (utf8Match) filename = decodeURIComponent(utf8Match[1]);
+  else if (plainMatch) filename = plainMatch[1];
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(link.href);
+}
+
+async function downloadTracklist() {
+  const url = activeUrl;
+  if (!url) return;
+
+  downloadTracklistBtn.disabled = true;
+  setStatus("Gerando lista de músicas...", false);
+
+  try {
+    const res = await fetch(`/api/playlist/tracklist?url=${encodeURIComponent(url)}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || "Erro ao gerar a lista de músicas.");
+    }
+    await saveResponseAsFile(res, "playlist.txt");
+    setStatus("");
+  } catch (err) {
+    setStatus(err.message);
+  } finally {
+    downloadTracklistBtn.disabled = false;
+  }
+}
 
 async function downloadSingle() {
   const url = activeUrl;
@@ -157,21 +207,7 @@ async function downloadSingle() {
       throw new Error(data.detail || "Erro ao baixar.");
     }
 
-    const blob = await res.blob();
-    const disposition = res.headers.get("Content-Disposition") || "";
-    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
-    let filename = `download.${currentType === "video" ? "mp4" : "mp3"}`;
-    if (utf8Match) filename = decodeURIComponent(utf8Match[1]);
-    else if (plainMatch) filename = plainMatch[1];
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);
+    await saveResponseAsFile(res, `download.${currentType === "video" ? "mp4" : "mp3"}`);
   } catch (err) {
     setStatus(err.message);
   } finally {
